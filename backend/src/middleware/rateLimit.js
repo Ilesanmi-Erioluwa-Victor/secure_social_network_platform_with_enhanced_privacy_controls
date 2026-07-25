@@ -17,13 +17,6 @@ const passwordResetLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const generalRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  message: { message: 'Too many requests, please try again later' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -33,13 +26,6 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: { message: 'Too many password reset attempts, please try again later' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 const generalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
