@@ -9,11 +9,7 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    if (!token) {
-      setStatus('no-token');
-      return;
-    }
-
+    if (!token) { setStatus('no-token'); return; }
     authAPI.verifyEmail({ token })
       .then(() => setStatus('success'))
       .catch(() => setStatus('error'));
@@ -25,40 +21,53 @@ export default function VerifyEmail() {
     try {
       await authAPI.verifyEmail({ token });
       setStatus('success');
-    } catch {
-      setStatus('error');
-    }
+    } catch { setStatus('error'); }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
-        {status === 'verifying' && <p className="text-gray-600">Verifying your email...</p>}
-        {status === 'success' && (
-          <>
-            <h2 className="text-2xl font-bold text-green-600 mb-4">Email Verified!</h2>
-            <p className="mb-4">Your email has been successfully verified.</p>
-            <button onClick={() => navigate('/feed')}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-              Go to Feed
-            </button>
-          </>
-        )}
-        {status === 'error' && (
-          <>
-            <h2 className="text-xl font-bold text-red-600 mb-4">Verification Failed</h2>
-            <p className="mb-4">The link may be expired or invalid.</p>
-            <form onSubmit={handleManualVerify}>
-              <input type="text" name="token" placeholder="Paste verification token"
-                className="w-full px-3 py-2 border rounded-lg mb-4" />
-              <button type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-                Try Again
-              </button>
-            </form>
-          </>
-        )}
-        {status === 'no-token' && <p className="text-gray-600">No verification token provided.</p>}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-md w-full mx-4">
+        <div className="bg-white rounded-2xl shadow-xl shadow-blue-100 p-8 text-center">
+          {status === 'verifying' && (
+            <div>
+              <div className="spinner mx-auto mb-4"></div>
+              <p className="text-gray-600">Verifying your email...</p>
+            </div>
+          )}
+          {status === 'success' && (
+            <div>
+              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-green-600 mb-2">Email Verified!</h2>
+              <p className="text-gray-500 mb-6">Your email has been successfully verified.</p>
+              <button onClick={() => navigate('/feed')} className="btn-primary">Go to Feed</button>
+            </div>
+          )}
+          {status === 'error' && (
+            <div>
+              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-red-600 mb-2">Verification Failed</h2>
+              <p className="text-gray-500 mb-6">The link may be expired or invalid.</p>
+              <form onSubmit={handleManualVerify}>
+                <input type="text" name="token" placeholder="Paste verification token"
+                  className="input-field mb-4" />
+                <button type="submit" className="btn-primary w-full">Try Again</button>
+              </form>
+            </div>
+          )}
+          {status === 'no-token' && (
+            <div>
+              <p className="text-gray-500">No verification token provided.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
