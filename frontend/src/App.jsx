@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import Login from './pages/Login';
@@ -28,7 +29,9 @@ function AdminRoute({ children }) {
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, initAuth } = useAuthStore();
+
+  useEffect(() => { initAuth(); }, []);
 
   return (
     <Routes>

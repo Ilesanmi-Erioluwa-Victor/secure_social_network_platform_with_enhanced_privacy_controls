@@ -29,6 +29,7 @@ router.post('/mfa/verify', [
 
 router.post('/refresh', authController.refresh);
 router.post('/logout', auth, authController.logout);
+router.get('/me', auth, authController.getMe);
 
 router.post('/forgot-password', passwordResetLimiter, [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),

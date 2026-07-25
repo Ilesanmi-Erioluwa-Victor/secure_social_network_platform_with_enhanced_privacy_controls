@@ -382,6 +382,19 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-passwordHash -refreshTokens -mfaSecret');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ user: user.toJSON() });
+  } catch (error) {
+    console.error('Get me error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   register,
   verifyEmail,
@@ -391,4 +404,5 @@ module.exports = {
   logout,
   forgotPassword,
   resetPassword,
+  getMe,
 };

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import api from '../services/api';
 
 const useAuthStore = create((set) => ({
   user: null,
@@ -17,6 +18,21 @@ const useAuthStore = create((set) => ({
   },
 
   setLoading: (isLoading) => set({ isLoading }),
+
+  initAuth: async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      set({ isLoading: false });
+      return;
+    }
+    try {
+      const { data } = await api.get('/auth/me');
+      set({ user: data.user, isAuthenticated: true, isLoading: false });
+    } catch {
+      localStorage.removeItem('accessToken');
+      set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
 }));
 
 export default useAuthStore;
