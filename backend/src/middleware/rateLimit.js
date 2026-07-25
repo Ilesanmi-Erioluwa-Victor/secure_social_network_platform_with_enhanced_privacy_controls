@@ -8,13 +8,6 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 5,
-  message: { message: 'Too many accounts created from this IP, please try again later' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
