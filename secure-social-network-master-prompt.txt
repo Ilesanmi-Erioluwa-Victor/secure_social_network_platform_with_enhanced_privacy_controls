@@ -1,0 +1,312 @@
+========================================================================
+DESIGN AND IMPLEMENTATION OF A SECURE SOCIAL NETWORK PLATFORM
+WITH ENHANCED PRIVACY CONTROLS
+MASTER CODEX / OPENCODE IMPLEMENTATION PROMPT
+========================================================================
+
+HOW TO USE THIS FILE
+---------------------
+Paste the "MASTER PROMPT" section below directly into Codex/OpenCode
+(or Claude Code) as your first instruction. Then follow the
+"STEP-BY-STEP EXECUTION GUIDE" further down to build it in stages,
+feeding each phase to the AI one at a time so it doesn't try to do
+everything in one shot.
+
+========================================================================
+MASTER PROMPT (paste this in)
+========================================================================
+
+You are building a full-stack web application called "SecureConnect" —
+a social networking platform with enhanced privacy controls, built as
+a Nigerian polytechnic HND final year project. Follow the spec below
+exactly. Build it incrementally, one module at a time, and confirm each
+module compiles/runs before moving to the next.
+
+PROJECT GOAL
+-------------
+A social platform where users can register, create profiles, post
+content, follow/friend other users, and message each other privately —
+with strong security (encrypted DMs, MFA, RBAC) and granular privacy
+controls (per-post visibility, custom audience lists, blocking).
+
+TECH STACK (use exactly this)
+-------------------------------
+Frontend:
+  - React (Vite)
+  - Tailwind CSS (no Bootstrap)
+  - React Router
+  - Axios for API calls
+  - Zustand or Context API for state (no Redux needed)
+  - libsodium-wrappers (client-side encryption for DMs)
+
+Backend:
+  - Node.js + Express
+  - MongoDB Atlas + Mongoose
+  - JWT (access + refresh token pattern)
+  - bcrypt for password hashing
+  - speakeasy + qrcode for TOTP-based MFA
+  - helmet, cors, express-rate-limit, express-validator
+  - Brevo transactional HTTP API (axios POST) for verification/reset
+    emails — NOT SMTP/Nodemailer (Render blocks SMTP ports)
+  - Supabase Storage for avatar/media uploads (not local disk, not S3)
+
+Hosting:
+  - Backend: Render
+  - Frontend: Vercel
+  - Database: MongoDB Atlas
+  - File storage: Supabase Storage
+
+FOLDER STRUCTURE
+------------------
+secureconnect/
+  backend/
+    src/
+      config/          (db.js, env.js, supabase.js)
+      models/           (User, Post, Comment, Message, FriendRequest,
+                          AuditLog, Report)
+      controllers/
+      routes/
+      middleware/       (auth.js, rbac.js, rateLimit.js, validate.js)
+      services/         (emailService.js, encryptionHelpers.js)
+      utils/
+      server.js
+    package.json
+    .env.example
+  frontend/
+    src/
+      components/
+      pages/
+      context/ or store/
+      services/api.js
+      hooks/
+      utils/crypto.js   (libsodium wrapper helpers)
+    package.json
+  README.md
+
+DATABASE SCHEMA (Mongoose)
+-----------------------------
+User:
+  - name, username (unique), email (unique), passwordHash
+  - role: enum ["user", "moderator", "admin"], default "user"
+  - mfaEnabled: boolean, mfaSecret: string (encrypted at rest)
+  - publicKey: string (for E2E messaging, generated client-side on
+    signup, private key never leaves the client)
+  - bio, avatarUrl, isVerified, isSuspended
+  - blockedUsers: [ObjectId]
+  - refreshTokens: [{ token, createdAt, expiresAt }]
+  - createdAt, updatedAt
+
+Post:
+  - author: ObjectId(User)
+  - content, mediaUrls: [string]
+  - visibility: enum ["public", "friends", "custom", "only_me"]
+  - customAudience: [ObjectId]  (used when visibility === "custom")
+  - likes: [ObjectId], commentsCount
+  - createdAt, updatedAt
+
+Comment:
+  - post: ObjectId(Post), author: ObjectId(User)
+  - content, createdAt
+
+FriendRequest / Follow:
+  - requester: ObjectId(User), recipient: ObjectId(User)
+  - status: enum ["pending", "accepted", "rejected"]
+
+Message (E2E encrypted):
+  - sender, recipient: ObjectId(User)
+  - ciphertext: string (already encrypted on client before send)
+  - nonce: string
+  - createdAt, readAt
+
+AuditLog:
+  - user: ObjectId(User), action, ipAddress, userAgent, timestamp
+
+Report:
+  - reporter: ObjectId(User), targetType (post/comment/user)
+  - targetId, reason, status: ["pending","reviewed","dismissed"]
+
+CORE FEATURES TO IMPLEMENT
+-----------------------------
+1. AUTHENTICATION & MFA
+   - Register/login with bcrypt password hashing
+   - Email verification link sent via Brevo API
+   - JWT access token (15 min) + refresh token (7 days, httpOnly cookie)
+   - TOTP-based MFA (speakeasy): user enables MFA, scans QR (qrcode
+     package generates it), must enter code to complete login when
+     enabled
+   - Account lockout after 5 failed login attempts (rate-limited)
+
+2. ROLE-BASED ACCESS CONTROL (RBAC)
+   - Roles: user, moderator, admin
+   - Middleware `requireRole(["admin"])` guarding admin routes
+   - Moderators can review reports and suspend content; only admins
+     can manage user roles and view audit logs
+
+3. PRIVACY CONTROLS (the core differentiator of this project)
+   - Per-post visibility: public / friends-only / custom list / only me
+   - Custom audience picker (multi-select friends)
+   - Block list: blocked users cannot view profile, posts, or message
+   - Profile-level settings: who can send friend requests, who can see
+     friends list, who can see email/phone
+   - "Download my data" and "Delete my account" (data portability +
+     right to erasure, referenced in the project's privacy justification)
+
+4. END-TO-END ENCRYPTED MESSAGING
+   - On signup, client generates a libsodium keypair; private key is
+     stored only in the browser (IndexedDB), public key sent to server
+   - To send a DM: fetch recipient's public key, encrypt message
+     client-side with libsodium box encryption, send only ciphertext +
+     nonce to server
+   - Server never sees plaintext messages — this is the key security
+     claim to demonstrate/screenshot for your defense
+
+5. SOCIAL FEATURES
+   - Profile creation/edit, avatar upload (Supabase Storage)
+   - Follow/friend request system with accept/reject
+   - News feed showing posts from friends + public posts, respecting
+     visibility rules server-side (never trust the client to filter)
+   - Like/comment on posts
+   - Content reporting -> moderator review queue
+
+6. SECURITY HARDENING (for your "simulated attack" testing chapter)
+   - helmet for secure headers
+   - express-rate-limit on login, register, password reset endpoints
+   - express-validator / zod for input validation on every route
+   - Mongoose schema-level sanitization (no raw query injection)
+   - CORS locked to your Vercel frontend origin only
+   - Audit logging of sensitive actions (login, role change, account
+     deletion)
+   - Passwords never logged or returned in any API response
+   - HTTPS enforced (Render/Vercel provide this by default)
+
+7. ADMIN DASHBOARD
+   - View reported content queue, suspend/reinstate users
+   - View audit logs
+   - Basic usage stats (user count, post count, reports pending)
+
+API ROUTES (high level)
+--------------------------
+POST   /api/auth/register
+POST   /api/auth/verify-email
+POST   /api/auth/login
+POST   /api/auth/mfa/verify
+POST   /api/auth/refresh
+POST   /api/auth/logout
+GET    /api/users/:username
+PATCH  /api/users/me
+PATCH  /api/users/me/privacy-settings
+POST   /api/users/:id/block
+POST   /api/friends/request/:id
+PATCH  /api/friends/:id/respond
+GET    /api/posts/feed
+POST   /api/posts
+PATCH  /api/posts/:id/visibility
+POST   /api/posts/:id/like
+POST   /api/posts/:id/comments
+POST   /api/messages/:userId        (body: ciphertext, nonce)
+GET    /api/messages/:userId
+POST   /api/reports
+GET    /api/admin/reports           (admin/moderator only)
+PATCH  /api/admin/users/:id/suspend (admin only)
+GET    /api/admin/audit-logs        (admin only)
+
+ENVIRONMENT VARIABLES (.env.example)
+---------------------------------------
+MONGO_URI=
+JWT_ACCESS_SECRET=
+JWT_REFRESH_SECRET=
+BREVO_API_KEY=
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+CLIENT_URL=
+NODE_ENV=
+
+BUILD ORDER (tell the AI to build in this order, one phase at a time)
+------------------------------------------------------------------------
+Phase 1: Backend scaffold + DB connection + User model + auth
+         (register/login/JWT, no MFA yet)
+Phase 2: Email verification via Brevo + password reset flow
+Phase 3: MFA (TOTP) on top of existing auth
+Phase 4: RBAC middleware + admin route protection
+Phase 5: Post model + feed + visibility rules (server-enforced)
+Phase 6: Friend/follow system + block list
+Phase 7: Comments, likes, reporting
+Phase 8: E2E encrypted messaging (libsodium client + ciphertext-only
+         server storage)
+Phase 9: Frontend build — auth pages, feed, profile, privacy settings
+         UI, messaging UI, admin dashboard
+Phase 10: Security hardening pass (helmet, rate limiting, validation,
+          audit logging) + deployment to Render/Vercel
+
+Do not skip ahead to a later phase until the current one is working
+and testable.
+
+========================================================================
+STEP-BY-STEP EXECUTION GUIDE (for you, the developer)
+========================================================================
+
+1. SET UP ACCOUNTS/SERVICES FIRST
+   - MongoDB Atlas cluster (free tier is fine)
+   - Supabase project (Storage bucket for avatars/media)
+   - Brevo account + API key (transactional email)
+   - Render account (backend) + Vercel account (frontend)
+
+2. INITIALIZE REPOS
+   - `npm create vite@latest frontend -- --template react`
+   - Tailwind install in frontend
+   - `npm init` in backend, install express, mongoose, jsonwebtoken,
+     bcrypt, speakeasy, qrcode, helmet, cors, express-rate-limit,
+     express-validator, axios, dotenv
+
+3. FEED PHASE 1 OF THE MASTER PROMPT TO CODEX/OPENCODE
+   Ask it to scaffold backend structure + User model + register/login
+   with JWT only. Test with Postman/Thunder Client before continuing.
+
+4. WORK THROUGH PHASES 2–10 SEQUENTIALLY
+   After each phase, test the specific feature end-to-end before
+   telling the AI to move to the next phase. This keeps context small
+   and avoids the AI generating a huge broken monolith in one go.
+
+5. WRITE YOUR FIVE CHAPTERS ALONGSIDE THE BUILD
+   - Chapter 1: Introduction (problem: privacy exploitation on social
+     platforms, objectives, scope, significance)
+   - Chapter 2: Literature Review (existing platforms' privacy models,
+     encryption approaches, RBAC in web apps, related past projects)
+   - Chapter 3: Methodology & System Design (SDLC model used — e.g.
+     Agile/Iterative, use case diagrams, ER diagram from the schema
+     above, sequence diagram for the E2E messaging flow, architecture
+     diagram: React <-> Express <-> MongoDB/Supabase)
+   - Chapter 4: Implementation & Testing (screenshots of each feature,
+     your "simulated attack" tests — e.g. attempted SQL/NoSQL
+     injection, XSS attempt in post content, brute-force login attempt
+     blocked by rate limiting — document what you tried and the
+     result)
+   - Chapter 5: Summary, Conclusion, Recommendations
+
+6. TESTING CHECKLIST FOR YOUR "SIMULATED ATTACK" CHAPTER
+   - Attempt login brute force -> confirm rate limiter blocks it
+   - Attempt to view a "friends-only" post while not a friend via
+     direct API call -> confirm 403, not just hidden in UI
+   - Attempt XSS payload in a post/comment -> confirm it's escaped/
+     sanitized on render
+   - Attempt to access /api/admin/* routes as a normal user -> confirm
+     403 from RBAC middleware
+   - Inspect DB directly -> confirm messages are stored as ciphertext,
+     not plaintext
+   - Attempt password reset token reuse -> confirm token invalidated
+     after first use
+
+========================================================================
+NOTES
+========================================================================
+- Keep private keys client-side only; this is your strongest security
+  claim and easiest to demonstrate in your defense (show the DB
+  collection with only ciphertext visible).
+- Server-side visibility enforcement (not just hiding things in the
+  UI) is what separates "real" privacy controls from cosmetic ones —
+  make sure every feed/profile query filters by visibility rules in
+  the Mongoose query itself, not after fetching.
+- If your supervisor wants a simpler stack, this can be dropped to
+  your PHP/PostgreSQL/Supabase/Vanilla JS pattern instead — the schema
+  and feature list stay the same, only the backend syntax changes.
+========================================================================
