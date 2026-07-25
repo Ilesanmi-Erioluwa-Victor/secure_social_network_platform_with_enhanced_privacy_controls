@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const config = require('./src/config/env');
 
 const User = require('./src/models/User');
@@ -26,49 +25,47 @@ const seed = async () => {
     ]);
     console.log('Cleared existing data');
 
-    const passwordHash = await bcrypt.hash('password123', 12);
-
     const users = await User.create([
       {
         name: 'Admin User', username: 'admin', email: 'admin@secureconnect.app',
-        passwordHash, role: 'admin', isVerified: true, bio: 'Platform administrator',
+        passwordHash: 'password123', role: 'admin', isVerified: true, bio: 'Platform administrator',
       },
       {
         name: 'Moderator User', username: 'moderator', email: 'moderator@secureconnect.app',
-        passwordHash, role: 'moderator', isVerified: true, bio: 'Content moderator',
+        passwordHash: 'password123', role: 'moderator', isVerified: true, bio: 'Content moderator',
       },
       {
         name: 'Alice Johnson', username: 'alice', email: 'alice@example.com',
-        passwordHash, role: 'user', isVerified: true, bio: 'Software engineer & privacy advocate. Love hiking and photography.',
+        passwordHash: 'password123', role: 'user', isVerified: true, bio: 'Software engineer & privacy advocate. Love hiking and photography.',
         privacySettings: { friendRequestWho: 'everyone', showFriendsList: 'friends', showEmail: 'only_me' },
       },
       {
         name: 'Bob Smith', username: 'bob', email: 'bob@example.com',
-        passwordHash, role: 'user', isVerified: true, bio: 'Digital artist from Lagos. Exploring the intersection of art and tech.',
+        passwordHash: 'password123', role: 'user', isVerified: true, bio: 'Digital artist from Lagos. Exploring the intersection of art and tech.',
       },
       {
         name: 'Carol Williams', username: 'carol', email: 'carol@example.com',
-        passwordHash, role: 'user', isVerified: true, bio: 'Cybersecurity researcher. PhD in Computer Science.',
+        passwordHash: 'password123', role: 'user', isVerified: true, bio: 'Cybersecurity researcher. PhD in Computer Science.',
       },
       {
         name: 'David Okafor', username: 'david', email: 'david@example.com',
-        passwordHash, role: 'user', isVerified: true, bio: 'Full-stack developer. Open source contributor.',
+        passwordHash: 'password123', role: 'user', isVerified: true, bio: 'Full-stack developer. Open source contributor.',
       },
       {
         name: 'Eve Martins', username: 'eve', email: 'eve@example.com',
-        passwordHash, role: 'user', isVerified: true, bio: 'UX designer crafting delightful experiences.',
+        passwordHash: 'password123', role: 'user', isVerified: true, bio: 'UX designer crafting delightful experiences.',
       },
       {
         name: 'Frank Adeyemi', username: 'frank', email: 'frank@example.com',
-        passwordHash, role: 'user', isVerified: false, bio: 'Student at YabaTech.',
+        passwordHash: 'password123', role: 'user', isVerified: false, bio: 'Student at YabaTech.',
       },
       {
         name: 'Grace Ogunlesi', username: 'grace', email: 'grace@example.com',
-        passwordHash, role: 'user', isVerified: true, bio: 'Data scientist. Making sense of the numbers.',
+        passwordHash: 'password123', role: 'user', isVerified: true, bio: 'Data scientist. Making sense of the numbers.',
       },
       {
         name: 'Henry Obi', username: 'henry', email: 'henry@example.com',
-        passwordHash, role: 'user', isVerified: true, bio: 'Blockchain enthusiast and smart contract developer.',
+        passwordHash: 'password123', role: 'user', isVerified: true, bio: 'Blockchain enthusiast and smart contract developer.',
       },
     ]);
     console.log(`Created ${users.length} users`);
