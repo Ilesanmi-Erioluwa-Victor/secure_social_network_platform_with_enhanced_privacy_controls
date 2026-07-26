@@ -25,6 +25,7 @@ export const usersAPI = {
 export const postsAPI = {
   getFeed: (params) => api.get('/posts/feed', { params }),
   getUserPosts: (userId, params) => api.get(`/posts/user/${userId}`, { params }),
+  getPost: (id) => api.get(`/posts/${id}`),
   createPost: (data) => api.post('/posts', data),
   updateVisibility: (id, data) => api.patch(`/posts/${id}/visibility`, data),
   likePost: (id) => api.post(`/posts/${id}/like`),

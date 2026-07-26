@@ -245,6 +245,51 @@ const getComments = async (req, res) => {
   }
 };
 
+const getPostById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const post = await Post.findById(id).populate('author', 'name username avatarUrl');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (post.author.blockedUsers?.includes(req.userId)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const isOwnPost = req.userId.equals(post.author._id);
+    const areFriends = await FriendRequest.findOne({
+      $or: [
+        { requester: req.userId, recipient: post.author._id, status: 'accepted' },
+        { requester: post.author._id, recipient: req.userId, status: 'accepted' },
+      ],
+    });
+
+    if (post.visibility === 'public') {
+      return res.json({ post });
+    }
+
+    if (post.visibility === 'only_me' && !isOwnPost) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (post.visibility === 'friends' && !isOwnPost && !areFriends) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (post.visibility === 'custom' && !isOwnPost && !post.customAudience.includes(req.userId)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    res.json({ post });
+  } catch (error) {
+    console.error('Get post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   createPost,
   getFeed,
@@ -253,4 +298,5 @@ module.exports = {
   likePost,
   addComment,
   getComments,
+  getPostById,
 };

@@ -169,8 +169,19 @@ export default function Profile() {
               {post.visibility === 'public' ? '🌍 Public' : post.visibility === 'friends' ? '👥 Friends' : post.visibility === 'only_me' ? '🔒 Only Me' : '🎯 Custom'}
             </span>
           </div>
-          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{post.content}</p>
-          <div className="flex items-center mt-3 text-sm text-gray-400 space-x-4">
+          <Link to={`/post/${post._id}`} className="block">
+            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+            {post.mediaUrls?.length > 0 && (
+              <div className={`grid gap-2 mt-3 ${post.mediaUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {post.mediaUrls.map((url, i) => (
+                  url.match(/\.(mp4|webm)$/i)
+                    ? <video key={i} src={url} controls className="w-full rounded-xl max-h-96 object-cover" />
+                    : <img key={i} src={url} alt="Post media" className="w-full rounded-xl max-h-96 object-cover" loading="lazy" />
+                ))}
+              </div>
+            )}
+          </Link>
+          <div className="flex items-center mt-3 text-sm text-gray-400 space-x-4 border-t border-gray-50 pt-3">
             <span>❤️ {post.likes?.length || 0}</span>
             <span>💬 {post.commentsCount || 0}</span>
           </div>

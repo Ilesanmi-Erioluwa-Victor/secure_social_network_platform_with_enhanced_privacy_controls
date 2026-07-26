@@ -22,5 +22,6 @@ router.post('/:id/comments', auth, [
 ], validate, postController.addComment);
 
 router.get('/:id/comments', auth, postController.getComments);
+router.get('/:id', auth, postController.getPostById);
 
 module.exports = router;

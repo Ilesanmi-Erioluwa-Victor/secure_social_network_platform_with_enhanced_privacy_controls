@@ -155,7 +155,7 @@ export default function Feed() {
             </button>
           </div>
           <button type="submit" disabled={uploading || (!newPost.trim() && mediaFiles.length === 0)}
-            className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
             {uploading ? (
               <span className="flex items-center space-x-1.5">
                 <span className="spinner w-4 h-4 border-white border-t-transparent"></span>
@@ -196,16 +196,18 @@ export default function Feed() {
               {visibilityLabels[post.visibility] || post.visibility}
             </span>
           </div>
-          <p className="text-gray-800 leading-relaxed mb-3 whitespace-pre-wrap">{post.content}</p>
-          {post.mediaUrls?.length > 0 && (
-            <div className={`grid gap-2 mb-4 ${post.mediaUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              {post.mediaUrls.map((url, i) => (
-                url.match(/\.(mp4|webm)$/i)
-                  ? <video key={i} src={url} controls className="w-full rounded-xl max-h-96 object-cover" />
-                  : <img key={i} src={url} alt="Post media" className="w-full rounded-xl max-h-96 object-cover" loading="lazy" />
-              ))}
-            </div>
-          )}
+          <Link to={`/post/${post._id}`} className="block">
+            <p className="text-gray-800 leading-relaxed mb-3 whitespace-pre-wrap">{post.content}</p>
+            {post.mediaUrls?.length > 0 && (
+              <div className={`grid gap-2 mb-4 ${post.mediaUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {post.mediaUrls.map((url, i) => (
+                  url.match(/\.(mp4|webm)$/i)
+                    ? <video key={i} src={url} controls className="w-full rounded-xl max-h-96 object-cover" />
+                    : <img key={i} src={url} alt="Post media" className="w-full rounded-xl max-h-96 object-cover" loading="lazy" />
+                ))}
+              </div>
+            )}
+          </Link>
           <div className="flex items-center space-x-1 text-sm border-t border-gray-50 pt-3">
             <button onClick={() => handleLike(post._id)}
               className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl transition-all duration-200 ${
