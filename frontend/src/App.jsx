@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Feed from './pages/Feed';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
+import FriendRequests from './pages/FriendRequests';
 import Messages from './pages/Messages';
 import Conversation from './pages/Conversation';
 import AdminDashboard from './pages/AdminDashboard';
@@ -45,6 +46,7 @@ export default function App() {
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/feed" element={<Feed />} />
         <Route path="/post/:postId" element={<PostDetail />} />
+        <Route path="/requests" element={<FriendRequests />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/messages" element={<Messages />} />

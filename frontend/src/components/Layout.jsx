@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import { authAPI } from '../services/endpoints';
+import { authAPI, friendsAPI } from '../services/endpoints';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    friendsAPI.getRequests().then(({ data }) => {
+      setPendingCount(data.received?.length || 0);
+    }).catch(() => {});
+  }, [user]);
 
   const handleLogout = async () => {
     try { await authAPI.logout(); } catch (e) {}
@@ -18,6 +26,7 @@ export default function Layout() {
   const navLinks = [
     { path: '/feed', label: 'Feed', icon: '🏠' },
     { path: '/messages', label: 'Messages', icon: '💬' },
+    { path: '/requests', label: 'Requests', icon: '👥', count: pendingCount },
     { path: '/privacy', label: 'Privacy', icon: '🔒' },
   ];
 
@@ -42,12 +51,17 @@ export default function Layout() {
               <div className="hidden md:flex items-center space-x-1">
                 {navLinks.map(link => (
                   <Link key={link.path} to={link.path}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                       location.pathname.startsWith(link.path)
                         ? 'bg-blue-50 text-blue-700'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}>
                     <span className="mr-1.5">{link.icon}</span>{link.label}
+                    {link.count > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 font-bold">
+                        {link.count > 99 ? '99+' : link.count}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -89,6 +103,11 @@ export default function Layout() {
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}>
                   <span className="mr-2 text-lg">{link.icon}</span>{link.label}
+                  {link.count > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 font-bold">
+                      {link.count > 99 ? '99+' : link.count}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
