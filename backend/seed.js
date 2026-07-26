@@ -8,12 +8,13 @@ const Report = require('./src/models/Report');
 const AuditLog = require('./src/models/AuditLog');
 
 const seed = async (mongoUri) => {
-  const shouldConnect = mongoUri || !mongoose.connection.readyState;
-  if (shouldConnect) {
-    const config = require('./src/config/env');
-    await mongoose.connect(mongoUri || config.mongoUri);
-    console.log('Connected to MongoDB');
-  }
+  try {
+    const shouldConnect = mongoUri || !mongoose.connection.readyState;
+    if (shouldConnect) {
+      const config = require('./src/config/env');
+      await mongoose.connect(mongoUri || config.mongoUri);
+      console.log('Connected to MongoDB');
+    }
 
     await Promise.all([
       User.deleteMany({}),
