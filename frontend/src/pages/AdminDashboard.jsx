@@ -7,6 +7,8 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState(null);
 
   useEffect(() => { loadStats(); loadReports(); }, []);
 
@@ -40,6 +42,21 @@ export default function AdminDashboard() {
     catch (err) { console.error('Suspend error:', err); }
   };
 
+  const handleSeedDatabase = async () => {
+    if (!window.confirm('This will delete ALL existing data and re-seed. Are you sure?')) return;
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      await adminAPI.seedDatabase();
+      setSeedResult({ type: 'success', message: 'Database seeded successfully!' });
+      loadStats();
+    } catch (err) {
+      setSeedResult({ type: 'error', message: err.response?.data?.message || 'Seed failed' });
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const tabs = [
     { id: 'stats', label: '📊 Dashboard' },
     { id: 'reports', label: '🚩 Reports', count: reports.length },
@@ -69,35 +86,51 @@ export default function AdminDashboard() {
       </div>
 
       {tab === 'stats' && stats && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center card-hover">
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+        <>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center card-hover">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <p className="text-3xl font-bold text-blue-600 mb-1">{stats.userCount}</p>
+              <p className="text-sm text-gray-500">Total Users</p>
             </div>
-            <p className="text-3xl font-bold text-blue-600 mb-1">{stats.userCount}</p>
-            <p className="text-sm text-gray-500">Total Users</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center card-hover">
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-              </svg>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center card-hover">
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
+              </div>
+              <p className="text-3xl font-bold text-green-600 mb-1">{stats.postCount}</p>
+              <p className="text-sm text-gray-500">Total Posts</p>
             </div>
-            <p className="text-3xl font-bold text-green-600 mb-1">{stats.postCount}</p>
-            <p className="text-sm text-gray-500">Total Posts</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center card-hover">
-            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-8.5V9" />
-              </svg>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center card-hover">
+              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-8.5V9" />
+                </svg>
+              </div>
+              <p className="text-3xl font-bold text-red-600 mb-1">{stats.pendingReports}</p>
+              <p className="text-sm text-gray-500">Pending Reports</p>
             </div>
-            <p className="text-3xl font-bold text-red-600 mb-1">{stats.pendingReports}</p>
-            <p className="text-sm text-gray-500">Pending Reports</p>
           </div>
-        </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 card-hover">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Database</h3>
+            <p className="text-sm text-gray-500 mb-4">Re-seed the database with fresh sample data. This will delete all existing data.</p>
+            <button onClick={handleSeedDatabase} disabled={seeding}
+              className="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-medium text-sm hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+              {seeding ? 'Seeding...' : '🌱 Seed Database'}
+            </button>
+            {seedResult && (
+              <p className={`mt-3 text-sm ${seedResult.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                {seedResult.message}
+              </p>
+            )}
+          </div>
+        </>
       )}
 
       {tab === 'reports' && (

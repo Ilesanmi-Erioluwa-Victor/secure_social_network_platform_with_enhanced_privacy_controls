@@ -57,6 +57,7 @@ export const adminAPI = {
   suspendUser: (id) => api.patch(`/admin/users/${id}/suspend`),
   getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
   getStats: () => api.get('/admin/stats'),
+  seedDatabase: () => api.post('/seed'),
 };
 
 export const uploadAPI = {

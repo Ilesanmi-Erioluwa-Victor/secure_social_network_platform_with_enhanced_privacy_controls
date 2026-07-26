@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import { authAPI } from '../services/endpoints';
@@ -6,6 +7,7 @@ export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try { await authAPI.logout(); } catch (e) {}
@@ -58,6 +60,16 @@ export default function Layout() {
                 </div>
                 <span className="text-sm font-medium text-gray-700 hidden sm:block">{user?.name}</span>
               </Link>
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
+                title="Menu">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  {mobileMenuOpen
+                    ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  }
+                </svg>
+              </button>
               <button onClick={handleLogout}
                 className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
                 title="Logout">
@@ -67,6 +79,20 @@ export default function Layout() {
               </button>
             </div>
           </div>
+          {mobileMenuOpen && (
+            <div className="md:hidden pb-3 border-t border-gray-100 pt-2">
+              {navLinks.map(link => (
+                <Link key={link.path} to={link.path} onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    location.pathname.startsWith(link.path)
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}>
+                  <span className="mr-2 text-lg">{link.icon}</span>{link.label}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </nav>
       <main className="max-w-4xl mx-auto px-4 py-6">
