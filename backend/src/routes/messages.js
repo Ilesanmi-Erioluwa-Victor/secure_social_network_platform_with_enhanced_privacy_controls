@@ -11,6 +11,7 @@ router.post('/:userId', auth, [
   body('nonce').notEmpty().withMessage('Nonce required'),
 ], validate, messageController.sendMessage);
 
+router.get('/unread/count', auth, messageController.getUnreadCount);
 router.get('/:userId', auth, messageController.getMessages);
 
 module.exports = router;

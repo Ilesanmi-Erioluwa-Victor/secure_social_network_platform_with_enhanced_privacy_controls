@@ -79,10 +79,14 @@ export default function Profile() {
         <div className="gradient-bg h-32"></div>
         <div className="px-6 pb-6">
           <div className="flex items-end -mt-12 mb-4">
-            <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center text-3xl font-bold text-white"
-              style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
-              {getInitials(profile.name)}
-            </div>
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="" className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg object-cover" />
+            ) : (
+              <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center text-3xl font-bold text-white"
+                style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
+                {getInitials(profile.name)}
+              </div>
+            )}
             <div className="ml-4 mb-1 flex-1">
               <div className="flex items-center justify-between">
                 <div>

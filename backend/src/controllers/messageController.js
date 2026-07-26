@@ -133,8 +133,19 @@ const getConversations = async (req, res) => {
   }
 };
 
+const getUnreadCount = async (req, res) => {
+  try {
+    const count = await Message.countDocuments({ recipient: req.userId, readAt: null });
+    res.json({ count });
+  } catch (error) {
+    console.error('Get unread count error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   sendMessage,
   getMessages,
   getConversations,
+  getUnreadCount,
 };

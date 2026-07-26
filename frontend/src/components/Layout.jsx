@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import { authAPI, friendsAPI } from '../services/endpoints';
+import { authAPI, friendsAPI, messagesAPI } from '../services/endpoints';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -9,11 +9,15 @@ export default function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     friendsAPI.getRequests().then(({ data }) => {
       setPendingCount(data.received?.length || 0);
+    }).catch(() => {});
+    messagesAPI.getUnreadCount().then(({ data }) => {
+      setUnreadMessages(data.count || 0);
     }).catch(() => {});
   }, [user]);
 
@@ -25,7 +29,7 @@ export default function Layout() {
 
   const navLinks = [
     { path: '/feed', label: 'Feed', icon: '🏠' },
-    { path: '/messages', label: 'Messages', icon: '💬' },
+    { path: '/messages', label: 'Messages', icon: '💬', count: unreadMessages },
     { path: '/requests', label: 'Requests', icon: '👥', count: pendingCount },
     { path: '/privacy', label: 'Privacy', icon: '🔒' },
   ];

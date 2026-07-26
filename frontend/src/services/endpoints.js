@@ -45,6 +45,7 @@ export const messagesAPI = {
   getConversations: () => api.get('/messages/conversations'),
   sendMessage: (userId, data) => api.post(`/messages/${userId}`, data),
   getMessages: (userId, params) => api.get(`/messages/${userId}`, { params }),
+  getUnreadCount: () => api.get('/messages/unread/count'),
 };
 
 export const reportsAPI = {

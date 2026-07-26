@@ -90,10 +90,14 @@ export default function Conversation() {
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           {otherUser ? (
             <Link to={`/profile/${otherUser.username}`} className="flex items-center space-x-3 group">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
-                style={{background: 'linear-gradient(135deg, #6366f1, #8b5cf6)'}}>
-                {otherUser.name?.[0]?.toUpperCase()}
-              </div>
+              {otherUser.avatarUrl ? (
+                <img src={otherUser.avatarUrl} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
+                  style={{background: 'linear-gradient(135deg, #6366f1, #8b5cf6)'}}>
+                  {otherUser.name?.[0]?.toUpperCase()}
+                </div>
+              )}
               <div>
                 <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{otherUser.name}</p>
                 <p className="text-xs text-gray-400">@{otherUser.username}</p>

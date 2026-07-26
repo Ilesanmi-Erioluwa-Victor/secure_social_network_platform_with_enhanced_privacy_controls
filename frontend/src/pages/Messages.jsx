@@ -38,10 +38,14 @@ export default function Messages() {
             <Link key={conv.user?._id} to={`/messages/${conv.user?._id}`}
               className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:bg-gray-50 transition-all card-hover">
               <div className="flex items-center">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white shrink-0"
-                  style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
-                  {conv.user?.name?.[0]?.toUpperCase()}
-                </div>
+                {conv.user?.avatarUrl ? (
+                  <img src={conv.user.avatarUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white shrink-0"
+                    style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
+                    {conv.user?.name?.[0]?.toUpperCase()}
+                  </div>
+                )}
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="font-semibold text-gray-900 truncate">{conv.user?.name}</p>
