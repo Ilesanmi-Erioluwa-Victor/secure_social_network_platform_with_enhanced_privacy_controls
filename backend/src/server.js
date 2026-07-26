@@ -14,6 +14,7 @@ const messageRoutes = require('./routes/messages');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
+const seedRoutes = require('./routes/seed');
 const { generalRateLimit } = require('./middleware/rateLimit');
 
 const app = express();
@@ -40,6 +41,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/seed', seedRoutes);
 
 app.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {

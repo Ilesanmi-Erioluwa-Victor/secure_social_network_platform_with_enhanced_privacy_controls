@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const config = require('./src/config/env');
-
 const User = require('./src/models/User');
 const Post = require('./src/models/Post');
 const Comment = require('./src/models/Comment');
@@ -9,10 +7,13 @@ const Message = require('./src/models/Message');
 const Report = require('./src/models/Report');
 const AuditLog = require('./src/models/AuditLog');
 
-const seed = async () => {
-  try {
-    await mongoose.connect(config.mongoUri);
+const seed = async (mongoUri) => {
+  const shouldConnect = mongoUri || !mongoose.connection.readyState;
+  if (shouldConnect) {
+    const config = require('./src/config/env');
+    await mongoose.connect(mongoUri || config.mongoUri);
     console.log('Connected to MongoDB');
+  }
 
     await Promise.all([
       User.deleteMany({}),
@@ -274,11 +275,16 @@ const seed = async () => {
     console.log('  leo@example.com (Leo Adekunle) — DevOps Engineer');
     console.log('  mona@example.com (Mona Isaacs) — Technical Writer');
 
-    process.exit(0);
+    console.log('Seed complete');
+    return true;
   } catch (error) {
     console.error('Seed error:', error);
-    process.exit(1);
+    throw error;
   }
 };
 
-seed();
+if (require.main === module) {
+  seed().then(() => process.exit(0)).catch(() => process.exit(1));
+}
+
+module.exports = seed;
