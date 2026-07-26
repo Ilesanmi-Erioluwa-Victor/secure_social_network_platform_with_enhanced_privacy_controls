@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const seedDatabase = require('../seed');
+const seedDatabase = require('../../seed');
 
 router.post('/', auth, async (req, res) => {
   try {
