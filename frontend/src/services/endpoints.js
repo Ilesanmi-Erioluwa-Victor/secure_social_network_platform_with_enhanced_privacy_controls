@@ -57,3 +57,13 @@ export const adminAPI = {
   getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
   getStats: () => api.get('/admin/stats'),
 };
+
+export const uploadAPI = {
+  uploadFile: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};

@@ -13,6 +13,7 @@ const friendRoutes = require('./routes/friends');
 const messageRoutes = require('./routes/messages');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
+const uploadRoutes = require('./routes/upload');
 const { generalRateLimit } = require('./middleware/rateLimit');
 
 const app = express();
@@ -37,8 +38,15 @@ app.use('/api/friends', friendRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.use((err, req, res, next) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ message: 'File too large. Max 10MB allowed.' });
+  }
+  if (err.message?.includes('Only images and videos')) {
+    return res.status(400).json({ message: err.message });
+  }
   console.error('Unhandled error:', err);
   res.status(500).json({ message: 'Internal server error' });
 });

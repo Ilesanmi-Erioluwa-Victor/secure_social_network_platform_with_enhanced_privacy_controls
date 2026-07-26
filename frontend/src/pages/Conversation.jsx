@@ -88,16 +88,26 @@ export default function Conversation() {
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <Link to={`/profile/${otherUser?.username}`} className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white"
-              style={{background: 'linear-gradient(135deg, #6366f1, #8b5cf6)'}}>
-              {otherUser?.name?.[0]?.toUpperCase()}
+          {otherUser ? (
+            <Link to={`/profile/${otherUser.username}`} className="flex items-center space-x-3 group">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
+                style={{background: 'linear-gradient(135deg, #6366f1, #8b5cf6)'}}>
+                {otherUser.name?.[0]?.toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{otherUser.name}</p>
+                <p className="text-xs text-gray-400">@{otherUser.username}</p>
+              </div>
+            </Link>
+          ) : (
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl shimmer"></div>
+              <div className="space-y-2">
+                <div className="w-32 h-4 shimmer rounded"></div>
+                <div className="w-20 h-3 shimmer rounded"></div>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{otherUser?.name || 'Loading...'}</p>
-              <p className="text-xs text-gray-400">{otherUser && `@${otherUser.username}`}</p>
-            </div>
-          </Link>
+          )}
           <div className="badge bg-green-50 text-green-700">
             <span className="w-2 h-2 bg-green-500 rounded-full inline-block mr-1.5"></span>
             {theirPublicKey ? '🔒 E2EE Available' : 'Standard'}
