@@ -14,6 +14,8 @@ export default function Feed() {
   const [commentText, setCommentText] = useState({});
   const [showComments, setShowComments] = useState({});
   const [comments, setComments] = useState({});
+  const [sendingComment, setSendingComment] = useState({});
+  const [loadingComments, setLoadingComments] = useState({});
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -92,7 +94,8 @@ export default function Feed() {
   };
 
   const handleAddComment = async (postId) => {
-    if (!commentText[postId]?.trim()) return;
+    if (!commentText[postId]?.trim() || sendingComment[postId]) return;
+    setSendingComment(prev => ({ ...prev, [postId]: true }));
     try {
       const { data } = await postsAPI.addComment(postId, { content: commentText[postId] });
       setComments(prev => ({ ...prev, [postId]: [...(prev[postId] || []), data.comment] }));
@@ -101,15 +104,18 @@ export default function Feed() {
         p._id === postId ? { ...p, commentsCount: p.commentsCount + 1 } : p
       ));
     } catch (err) { console.error('Comment error:', err); }
+    finally { setSendingComment(prev => ({ ...prev, [postId]: false })); }
   };
 
   const toggleComments = async (postId) => {
     if (showComments[postId]) { setShowComments(prev => ({ ...prev, [postId]: false })); return; }
     setShowComments(prev => ({ ...prev, [postId]: true }));
+    setLoadingComments(prev => ({ ...prev, [postId]: true }));
     try {
       const { data } = await postsAPI.getComments(postId);
       setComments(prev => ({ ...prev, [postId]: data.comments }));
     } catch (err) { console.error('Load comments error:', err); }
+    finally { setLoadingComments(prev => ({ ...prev, [postId]: false })); }
   };
 
   const visibilityLabels = { public: '🌍 Public', friends: '👥 Friends', custom: '🎯 Custom', only_me: '🔒 Only Me' };
@@ -231,25 +237,34 @@ export default function Feed() {
 
           {showComments[post._id] && (
             <div className="border-t border-gray-100 mt-3 pt-4">
-              {(!comments[post._id] || comments[post._id].length === 0) && (
-                <p className="text-gray-400 text-sm text-center py-3">No comments yet. Be the first!</p>
-              )}
-              {comments[post._id]?.map(comment => (
-                <div key={comment._id} className="flex items-start space-x-3 mb-3">
-                  <div className="w-8 h-8 avatar-placeholder text-xs rounded-full shrink-0" style={{background: 'linear-gradient(135deg, #6366f1, #8b5cf6)'}}>
-                    {comment.author?.name?.[0]?.toUpperCase()}
-                  </div>
-                  <div className="flex-1 bg-gray-50 rounded-2xl px-4 py-2.5">
-                    <div className="flex items-center justify-between">
-                      <Link to={`/profile/${comment.author?.username}`} className="text-sm font-semibold text-gray-900 hover:text-blue-600">
-                        {comment.author?.name}
-                      </Link>
-                      <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-sm text-gray-700 mt-0.5">{comment.content}</p>
-                  </div>
+              {loadingComments[post._id] ? (
+                <div className="flex items-center justify-center py-6 space-x-2 text-gray-400">
+                  <div className="spinner w-5 h-5"></div>
+                  <p className="text-sm">Loading comments...</p>
                 </div>
-              ))}
+              ) : (
+                <>
+                  {(!comments[post._id] || comments[post._id].length === 0) && (
+                    <p className="text-gray-400 text-sm text-center py-3">No comments yet. Be the first!</p>
+                  )}
+                  {comments[post._id]?.map(comment => (
+                    <div key={comment._id} className="flex items-start space-x-3 mb-3">
+                      <div className="w-8 h-8 avatar-placeholder text-xs rounded-full shrink-0" style={{background: 'linear-gradient(135deg, #6366f1, #8b5cf6)'}}>
+                        {comment.author?.name?.[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 bg-gray-50 rounded-2xl px-4 py-2.5">
+                        <div className="flex items-center justify-between">
+                          <Link to={`/profile/${comment.author?.username}`} className="text-sm font-semibold text-gray-900 hover:text-blue-600">
+                            {comment.author?.name}
+                          </Link>
+                          <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-gray-700 mt-0.5">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
               <div className="flex items-center space-x-2 mt-3">
                 <div className="w-8 h-8 avatar-placeholder text-xs rounded-full shrink-0" style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
                   {user?.name?.[0]?.toUpperCase()}
@@ -257,10 +272,16 @@ export default function Feed() {
                 <input type="text" value={commentText[post._id] || ''}
                   onChange={(e) => setCommentText(prev => ({ ...prev, [post._id]: e.target.value }))}
                   placeholder="Write a comment..."
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                  disabled={sendingComment[post._id]}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 disabled:opacity-50"
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(post._id); }} />
                 <button onClick={() => handleAddComment(post._id)}
-                  className="btn-primary text-sm px-4 py-2.5">Send</button>
+                  disabled={sendingComment[post._id] || !commentText[post._id]?.trim()}
+                  className="btn-primary text-sm px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed min-w-[74px] flex justify-center">
+                  {sendingComment[post._id]
+                    ? <span className="spinner w-4 h-4 border-white border-t-transparent"></span>
+                    : 'Send'}
+                </button>
               </div>
             </div>
           )}
