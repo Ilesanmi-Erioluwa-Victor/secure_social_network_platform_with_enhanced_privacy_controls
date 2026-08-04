@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import { authAPI, friendsAPI, messagesAPI } from '../services/endpoints';
+import { authAPI, friendsAPI, messagesAPI, usersAPI } from '../services/endpoints';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -10,6 +10,11 @@ export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     if (!user) return;
@@ -20,6 +25,37 @@ export default function Layout() {
       setUnreadMessages(data.count || 0);
     }).catch(() => {});
   }, [user]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await usersAPI.searchUsers(searchQuery);
+        setSearchResults(data.users || []);
+        setSearchOpen(true);
+      } catch (err) {
+        console.error('Search error:', err);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleLogout = async () => {
     try { await authAPI.logout(); } catch (e) {}
@@ -71,11 +107,54 @@ export default function Layout() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              <div className="relative hidden md:block" ref={searchRef}>
+                <div className="relative">
+                  <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input type="text" value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => searchQuery.trim() && setSearchOpen(true)}
+                    placeholder="Search people..."
+                    className="w-48 pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 focus:bg-white transition-all" />
+                  {searching && (
+                    <span className="spinner w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2"></span>
+                  )}
+                </div>
+                {searchOpen && (
+                  <div className="absolute top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                    {searchResults.length === 0 && searchQuery.trim() && !searching ? (
+                      <p className="text-gray-400 text-sm text-center py-6">No users found</p>
+                    ) : (
+                      searchResults.map(u => (
+                        <Link key={u._id} to={`/profile/${u.username}`} onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                          {u.avatarUrl ? (
+                            <img src={u.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-9 h-9 avatar-placeholder text-xs rounded-full" style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
+                              {u.name?.[0]?.toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{u.name}</p>
+                            <p className="text-xs text-gray-400 truncate">@{u.username}</p>
+                          </div>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
               <Link to={`/profile/${user?.username}`}
                 className="flex items-center space-x-2 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-all duration-200">
-                <div className="w-8 h-8 avatar-placeholder text-xs rounded-full" style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
-                  {user?.name?.[0]?.toUpperCase()}
-                </div>
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 avatar-placeholder text-xs rounded-full" style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
+                    {user?.name?.[0]?.toUpperCase()}
+                  </div>
+                )}
                 <span className="text-sm font-medium text-gray-700 hidden sm:block">{user?.name}</span>
               </Link>
               <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

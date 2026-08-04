@@ -5,6 +5,7 @@ const userController = require('../controllers/userController');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
 
+router.get('/search', auth, userController.searchUsers);
 router.get('/:username', auth, userController.getProfile);
 router.patch('/me', auth, [
   body('name').optional().trim().isLength({ min: 2, max: 100 }),

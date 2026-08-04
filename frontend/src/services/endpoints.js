@@ -13,6 +13,7 @@ export const authAPI = {
 
 export const usersAPI = {
   getProfile: (username) => api.get(`/users/${username}`),
+  searchUsers: (q) => api.get('/users/search', { params: { q } }),
   updateProfile: (data) => api.patch('/users/me', data),
   updatePrivacySettings: (data) => api.patch('/users/me/privacy-settings', data),
   blockUser: (id) => api.post(`/users/${id}/block`),

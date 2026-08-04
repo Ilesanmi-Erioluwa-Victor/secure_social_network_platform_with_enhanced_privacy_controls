@@ -6,6 +6,7 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('verifying');
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -18,10 +19,12 @@ export default function VerifyEmail() {
   const handleManualVerify = async (e) => {
     e.preventDefault();
     const token = e.target.token.value;
+    setVerifying(true);
     try {
       await authAPI.verifyEmail({ token });
       setStatus('success');
     } catch { setStatus('error'); }
+    finally { setVerifying(false); }
   };
 
   return (
@@ -58,7 +61,10 @@ export default function VerifyEmail() {
               <form onSubmit={handleManualVerify}>
                 <input type="text" name="token" placeholder="Paste verification token"
                   className="input-field mb-4" />
-                <button type="submit" className="btn-primary w-full">Try Again</button>
+                <button type="submit" disabled={verifying}
+                  className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
+                  {verifying ? 'Verifying...' : 'Try Again'}
+                </button>
               </form>
             </div>
           )}

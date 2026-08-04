@@ -74,9 +74,34 @@ const getProfile = async (req, res) => {
   }
 };
 
+const searchUsers = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || !q.trim()) {
+      return res.json({ users: [] });
+    }
+
+    const regex = new RegExp(q.trim(), 'i');
+    const users = await User.find({
+      $and: [
+        { $or: [{ name: regex }, { username: regex }] },
+        { isSuspended: false },
+        { _id: { $nin: [req.userId] } },
+      ],
+    })
+      .select('name username avatarUrl bio isVerified')
+      .limit(10);
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const updateProfile = async (req, res) => {
   try {
-    const allowedFields = ['name', 'bio', 'avatarUrl'];
+    const allowedFields = ['name', 'bio', 'avatarUrl', 'coverUrl'];
     const updates = {};
 
     for (const field of allowedFields) {
@@ -255,6 +280,7 @@ const downloadData = async (req, res) => {
 
 module.exports = {
   getProfile,
+  searchUsers,
   updateProfile,
   updatePrivacySettings,
   blockUser,

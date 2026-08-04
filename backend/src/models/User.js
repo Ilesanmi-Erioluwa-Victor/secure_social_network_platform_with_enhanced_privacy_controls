@@ -53,6 +53,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  coverUrl: {
+    type: String,
+    default: '',
+  },
   isVerified: {
     type: Boolean,
     default: false,

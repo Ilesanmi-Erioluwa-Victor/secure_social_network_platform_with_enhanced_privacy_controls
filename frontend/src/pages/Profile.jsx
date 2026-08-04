@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usersAPI, postsAPI, friendsAPI } from '../services/endpoints';
+import { usersAPI, postsAPI, friendsAPI, uploadAPI } from '../services/endpoints';
 import useAuthStore from '../store/authStore';
 
 export default function Profile() {
@@ -11,7 +11,15 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', bio: '' });
   const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [unfriending, setUnfriending] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const photoInputRef = useRef(null);
+  const coverInputRef = useRef(null);
   const currentUser = useAuthStore(s => s.user);
+  const setUser = useAuthStore(s => s.setUser);
   const isOwnProfile = !username || currentUser?.username === username;
   const targetUsername = username || currentUser?.username;
 
@@ -37,30 +45,61 @@ export default function Profile() {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    setSavingProfile(true);
     try {
       const { data } = await usersAPI.updateProfile(editForm);
       setProfile(data.user);
       setEditing(false);
     } catch (err) {
       console.error('Update failed:', err);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handlePhotoUpload = async (type) => {
+    const inputRef = type === 'avatar' ? photoInputRef : coverInputRef;
+    const file = inputRef.current?.files?.[0];
+    if (!file) return;
+    const setLoadingState = type === 'avatar' ? setUploadingPhoto : setUploadingCover;
+    setLoadingState(true);
+    try {
+      const { data } = await uploadAPI.uploadFile(file);
+      const field = type === 'avatar' ? 'avatarUrl' : 'coverUrl';
+      const { data: updated } = await usersAPI.updateProfile({ [field]: data.url });
+      setProfile(updated.user);
+      if (currentUser?._id === updated.user._id) {
+        setUser({ ...currentUser, ...updated.user });
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+    } finally {
+      setLoadingState(false);
+      inputRef.current.value = '';
     }
   };
 
   const handleSendFriendRequest = async () => {
+    setSendingRequest(true);
     try {
       await friendsAPI.sendRequest(profile._id);
       setFriendshipStatus('requested');
     } catch (err) {
       console.error('Friend request failed:', err);
+    } finally {
+      setSendingRequest(false);
     }
   };
 
   const handleUnfriend = async () => {
+    setUnfriending(true);
     try {
       await friendsAPI.unfriend(profile._id);
       setFriendshipStatus('not_friends');
     } catch (err) {
       console.error('Unfriend failed:', err);
+    } finally {
+      setUnfriending(false);
     }
   };
 
@@ -76,17 +115,59 @@ export default function Profile() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-        <div className="gradient-bg h-32"></div>
+        <div className="relative">
+          {profile.coverUrl ? (
+            <img src={profile.coverUrl} alt="Cover" className="w-full h-32 object-cover" />
+          ) : (
+            <div className="gradient-bg h-32"></div>
+          )}
+          {isOwnProfile && (
+            <>
+              <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
+                onChange={() => handlePhotoUpload('cover')} />
+              <button onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}
+                className="absolute top-2 right-2 px-3 py-1.5 bg-black/40 backdrop-blur text-white text-xs font-medium rounded-xl hover:bg-black/60 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 transition-all">
+                {uploadingCover ? (
+                  <span className="spinner w-3.5 h-3.5 border-white border-t-transparent"></span>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                )}
+                <span>{uploadingCover ? 'Uploading...' : 'Edit Cover'}</span>
+              </button>
+            </>
+          )}
+        </div>
         <div className="px-6 pb-6">
           <div className="flex items-end -mt-12 mb-4">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt="" className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg object-cover" />
-            ) : (
-              <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center text-3xl font-bold text-white"
-                style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
-                {getInitials(profile.name)}
-              </div>
-            )}
+            <div className="relative">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="" className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg object-cover" />
+              ) : (
+                <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center text-3xl font-bold text-white"
+                  style={{background: 'linear-gradient(135deg, #2563eb, #7c3aed)'}}>
+                  {getInitials(profile.name)}
+                </div>
+              )}
+              {isOwnProfile && (
+                <>
+                  <input ref={photoInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={() => handlePhotoUpload('avatar')} />
+                  <button onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all">
+                    {uploadingPhoto ? (
+                      <span className="spinner w-4 h-4 border-white border-t-transparent"></span>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
             <div className="ml-4 mb-1 flex-1">
               <div className="flex items-center justify-between">
                 <div>
@@ -96,11 +177,21 @@ export default function Profile() {
                 {!isOwnProfile && (
                   <div className="flex space-x-2">
                     {friendshipStatus === 'not_friends' && (
-                      <button onClick={handleSendFriendRequest} className="btn-primary text-sm">
-                        <svg className="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                        </svg>
-                        Add Friend
+                      <button onClick={handleSendFriendRequest} disabled={sendingRequest}
+                        className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        {sendingRequest ? (
+                          <span className="flex items-center space-x-1.5">
+                            <span className="spinner w-4 h-4 border-white border-t-transparent"></span>
+                            <span>Sending...</span>
+                          </span>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Add Friend
+                          </>
+                        )}
                       </button>
                     )}
                     {friendshipStatus === 'requested' && (
@@ -114,8 +205,9 @@ export default function Profile() {
                         <Link to={`/messages/${profile._id}`} className="btn-primary text-sm">
                           💬 Message
                         </Link>
-                        <button onClick={handleUnfriend} className="px-4 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-sm font-medium transition-all">
-                          Unfriend
+                        <button onClick={handleUnfriend} disabled={unfriending}
+                          className="px-4 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                          {unfriending ? 'Unfriending...' : 'Unfriend'}
                         </button>
                       </div>
                     )}
@@ -132,8 +224,11 @@ export default function Profile() {
               <textarea value={editForm.bio} onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
                 className="input-field" placeholder="Bio" rows={3} />
               <div className="flex space-x-2">
-                <button type="submit" className="btn-primary text-sm">Save Changes</button>
-                <button type="button" onClick={() => setEditing(false)} className="btn-secondary text-sm">Cancel</button>
+                <button type="submit" disabled={savingProfile}
+                  className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                  {savingProfile ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button type="button" onClick={() => setEditing(false)} disabled={savingProfile} className="btn-secondary text-sm">Cancel</button>
               </div>
             </form>
           ) : (
