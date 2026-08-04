@@ -151,7 +151,7 @@ export default function PrivacySettings() {
         <div className="flex mb-4">
           <input type="text" value={blockUserInput}
             onChange={e => setBlockUserInput(e.target.value)}
-            placeholder="Enter User ID to block"
+            placeholder="Enter username to block"
             className="flex-1 input-field rounded-r-none border-r-0"
             onKeyDown={(e) => { if (e.key === 'Enter') handleBlock(); }} />
           <button onClick={handleBlock}

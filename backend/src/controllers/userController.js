@@ -1,6 +1,15 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const FriendRequest = require('../models/FriendRequest');
+
+const resolveTargetUser = async (identifier) => {
+  const isValidId = mongoose.Types.ObjectId.isValid(identifier);
+  if (isValidId) {
+    return User.findById(identifier);
+  }
+  return User.findOne({ username: identifier.toLowerCase() });
+};
 
 const getProfile = async (req, res) => {
   try {
@@ -113,7 +122,7 @@ const updatePrivacySettings = async (req, res) => {
 const blockUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const userToBlock = await User.findById(id);
+    const userToBlock = await resolveTargetUser(id);
 
     if (!userToBlock) {
       return res.status(404).json({ message: 'User not found' });
@@ -124,17 +133,17 @@ const blockUser = async (req, res) => {
     }
 
     const user = await User.findById(req.userId);
-    if (user.blockedUsers.includes(id)) {
+    if (user.blockedUsers.includes(userToBlock._id)) {
       return res.status(400).json({ message: 'User already blocked' });
     }
 
-    user.blockedUsers.push(id);
+    user.blockedUsers.push(userToBlock._id);
     await user.save();
 
     await FriendRequest.deleteMany({
       $or: [
-        { requester: req.userId, recipient: id },
-        { requester: id, recipient: req.userId },
+        { requester: req.userId, recipient: userToBlock._id },
+        { requester: userToBlock._id, recipient: req.userId },
       ],
     });
 
@@ -143,7 +152,7 @@ const blockUser = async (req, res) => {
       action: 'BLOCK_USER',
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
-      details: { blockedUserId: id },
+      details: { blockedUserId: userToBlock._id },
     });
 
     res.json({ message: 'User blocked' });
@@ -156,13 +165,19 @@ const blockUser = async (req, res) => {
 const unblockUser = async (req, res) => {
   try {
     const { id } = req.params;
+    const userToUnblock = await resolveTargetUser(id);
+
+    if (!userToUnblock) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const user = await User.findById(req.userId);
 
-    if (!user.blockedUsers.includes(id)) {
+    if (!user.blockedUsers.includes(userToUnblock._id)) {
       return res.status(400).json({ message: 'User not in block list' });
     }
 
-    user.blockedUsers.pull(id);
+    user.blockedUsers.pull(userToUnblock._id);
     await user.save();
 
     res.json({ message: 'User unblocked' });
